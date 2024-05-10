@@ -38,6 +38,17 @@ function dishExists(req, res, next) {
     next({ status: 404, message: `Dish id not found ${dishId}`});
 }
 
+function dishIdMatch(req, res, next) {
+    const { dishId } = req.params;
+    const { data: { id } = {} } = req.body;
+    if (id) {
+        if (id != res.locals.dish.id) {
+            next({ status: 400, message: `Dish id does not match route id. Dish: ${id}, Route: ${dishId}` })
+        };
+    }
+    next();
+}
+
 function read(req, res) {
     res.json({ data: res.locals.dish });
 }
@@ -71,6 +82,7 @@ module.exports = {
     ],
     update: [
         dishExists,
+        dishIdMatch,
         bodyDataHas("name"),
         propertyIsValidString("name"),
         bodyDataHas("description"),
