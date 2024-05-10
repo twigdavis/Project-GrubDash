@@ -44,7 +44,7 @@ function propertyIsValidInteger(propertyName) {
 function create(req, res) {
     const { data: { name, description, price, image_url } = {} } = req.body;
     const newDish = {
-        id: nextId,
+        id: nextId(),
         name,
         description,
         price,
@@ -54,10 +54,36 @@ function create(req, res) {
     res.status(201).json({ data: newDish });
 }
 
+function dishExists(req, res, next) {
+    const { dishId } = req.params;
+    const dishFound = dishes.find((dish) => dish.id === dishId);
+    if (dishFound) {
+        res.locals.dish = dishFound
+        return next();
+    }
+    next({ status: 404, message: `Dish id not found ${dishId}`});
+}
 
+function read(req, res) {
+    res.json({ data: res.locals.dish });
+}
+
+function update(req, res) {
+    const dish = res.locals.dish
+    const { data: {name, description, price, image_url } = {} } = req.body
+
+    //Update the dish
+    dish.name = name;
+    dish.description = description;
+    dish.price = price;
+    dish.image_url = image_url;
+
+    res.json({ data: dish });
+}
 
 module.exports = {
     list,
+    read: [dishExists, read],
     create: [
         bodyDataHas("name"),
         propertyIsValidString("name"),
@@ -68,5 +94,17 @@ module.exports = {
         bodyDataHas("image_url"),
         propertyIsValidString("image_url"),
         create
+    ],
+    update: [
+        dishExists,
+        bodyDataHas("name"),
+        propertyIsValidString("name"),
+        bodyDataHas("description"),
+        propertyIsValidString("description"),
+        bodyDataHas("price"),
+        propertyIsValidInteger("price"),
+        bodyDataHas("image_url"),
+        propertyIsValidString("image_url"),
+        update
     ]
 }
